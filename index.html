@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story & Visual Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f4f6;
+    }
+    #storyOutput, #visualOutput img {
+      transition: opacity 0.5s ease-in-out;
+    }
+    #visualOutput img {
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+    button {
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #3b82f6;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+  <div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full">
+    <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Story & Visual Generator</h1>
+
+    <div class="mb-6">
+      <label for="genreSelect" class="block text-sm font-medium text-gray-700 mb-2">Select a Genre:</label>
+      <select id="genreSelect" name="genre" class="block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+        <option value="fantasy">Fantasy</option>
+        <option value="sci-fi">Sci-Fi</option>
+        <option value="mystery">Mystery</option>
+        <option value="adventure">Adventure</option>
+      </select>
+    </div>
+
+    <div class="text-center mb-8">
+      <button id="generateBtn" class="bg-blue-500 text-white font-semibold py-2 px-6 rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+        Generate Story & Visual
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
+        <h2 class="text-lg font-semibold mb-3 text-gray-700">Generated Story:</h2>
+        <p id="storyOutput" class="text-gray-600 text-sm leading-relaxed min-h-[100px]">Select a genre and click generate...</p>
+      </div>
+
+      <div class="bg-gray-50 p-4 rounded-md border border-gray-200 flex flex-col items-center justify-center">
+        <h2 class="text-lg font-semibold mb-3 text-gray-700">Generated Visual:</h2>
+        <div id="visualOutput" class="w-full h-48 flex items-center justify-center">
+          <div class="text-gray-400 text-center">Visual will appear here</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const genreSelect = document.getElementById('genreSelect');
+    const generateBtn = document.getElementById('generateBtn');
+    const storyOutput = document.getElementById('storyOutput');
+    const visualOutput = document.getElementById('visualOutput');
+
+    const backendURL = 'https://story-ai-backend.onrender.com';
+
+    async function generateContent() {
+      const selectedGenre = genreSelect.value;
+      storyOutput.style.opacity = 0;
+      visualOutput.style.opacity = 0;
+
+      try {
+        const storyRes = await fetch(`${backendURL}/api/story`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ genre: selectedGenre })
+        });
+        const { story } = await storyRes.json();
+
+        const imageRes = await fetch(`${backendURL}/api/image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ genre: selectedGenre })
+        });
+        const { imageUrl } = await imageRes.json();
+
+        setTimeout(() => {
+          storyOutput.textContent = story;
+          storyOutput.style.opacity = 1;
+        }, 300);
+
+        setTimeout(() => {
+          visualOutput.innerHTML = `<img src="${imageUrl}" alt="Generated ${selectedGenre} visual" class="w-full h-full object-contain">`;
+          visualOutput.style.opacity = 1;
+        }, 300);
+      } catch (error) {
+        console.error("Error generating content:", error);
+        storyOutput.textContent = "Something went wrong. Please try again.";
+        visualOutput.innerHTML = '<div class="text-red-400 text-center">Failed to load visual</div>';
+        storyOutput.style.opacity = 1;
+        visualOutput.style.opacity = 1;
+      }
+    }
+
+    generateBtn.addEventListener('click', generateContent);
+  </script>
+</body>
+</html>
